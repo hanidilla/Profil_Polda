@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\DataPegawai;
+use App\Models\Jabatan;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\File;
 
 class DataPegawaiController extends Controller
 {
@@ -15,8 +17,11 @@ class DataPegawaiController extends Controller
      */
     public function index()
     {
-        $datapegawais = DataPegawai::latest()->paginate(10);
-        return view('pages.table_pegawai', compact('datapegawais'));
+        //$mahasiswas = Mahasiswa::all()
+        $pegawai = DataPegawai::with('jabatan')->get();
+        $posts = DataPegawai::orderBy('id', 'asc')->paginate(5);
+        return view('pages.table_pegawai', compact('pegawai', 'posts'),['pegawai' => $pegawai,'posts' => $posts]); 
+        with('i', (request()->input('page', 1) - 1) * 5);
     }
 
 /**
@@ -26,7 +31,8 @@ class DataPegawaiController extends Controller
 */
 public function create()
 {
-    return view('datapegawai.create');
+    $jabatan = Jabatan::all();
+    return view('pages.create_pegawai', ['jabatan' => $jabatan]);
 }
 
 
@@ -38,33 +44,26 @@ public function create()
 */
 public function store(Request $request)
 {
-    $this->validate($request, [
-        'NRP'     => 'required',
-        'Nama'    => 'required',
-        'Pangkat' => 'required',
-        'Jabatan' => 'required',
-        'image'   => 'required|image|mimes:png,jpg,jpeg'
+    $request->validate([ 
+        'nama' => 'required',
+        'foto' => 'required',
     ]);
+        
+        $image = $request->file('foto');
+        if ($image) {
+        $image_name = $request->file('foto')->store('images', 'public');
+        }
 
-    //upload image
-    $image = $request->file('image');
-    $image->storeAs('public/datapegawais', $image->hashName());
+        //Mahasiswa::create($request->all());
+        $jabatan = Jabatan::find($request->get('jabatan'));
 
-    $datapegawai = DataPegawai::create([
-        'NRP'     => $request->NRP,
-        'Nama'    => $request->nama,
-        'Pangkat' => $request->pangkat,
-        'Jabatan' => $request->jabatan,
-        'image'   => $image->hashName()
-    ]);
+        $pegawai = new DataPegawai();
+        $pegawai->nama = $request->get('nama');
+        $pegawai->foto = $image_name;
+        $pegawai->jabatan()->associate($jabatan);
+        $pegawai->save();
 
-    if($datapegawai){
-        //redirect dengan pesan sukses
-        return redirect()->route('pages.table_pegawai')->with(['success' => 'Data Berhasil Disimpan!']);
-    }else{
-        //redirect dengan pesan error
-        return redirect()->route('pages.table_pegawai')->with(['error' => 'Data Gagal Disimpan!']);
-    }
+        return redirect()->route('table-pegawai.index') ->with('Success', 'Pegawai Berhasil Ditambahkan');
 }
 
 /**
@@ -73,9 +72,11 @@ public function store(Request $request)
 * @param  mixed $datapegawai
 * @return void
 */
-public function edit(DataPegawai $datapegawai)
+public function edit($id)
 {
-    return view('DataPegawai.edit', compact('datapegawai'));
+    $pegawai = DataPegawai::with('jabatan')->where('id', $id)->first();
+    $jabatan = Jabatan::all();
+    return view('pages.edit_pegawai', compact('pegawai', 'jabatan'));
 }
 
 
@@ -86,51 +87,27 @@ public function edit(DataPegawai $datapegawai)
 * @param  mixed $datapegawai
 * @return void
 */
-public function update(Request $request, DataPegawai $datapegawai)
-{
-    $this->validate($request, [
-        'NRP'       => 'required',
-        'Pangkat'   => 'required',
-        'Jabatan'   => 'required'
-    ]);
-
-    //get data Blog by ID
-    $datapegawai = DataPegawai::findOrFail($datapegawai->id);
-
-    if($request->file('image') == "") {
-
-        $datapegawai->update([
-            'NRP'     => $request->NRP,
-            'Pangkat' => $request->pangkat,
-            'Jabatan' => $request->jabatan
+public function update(Request $request, $id)
+    {
+        $request->validate([  
+            'nama' => 'required',
         ]);
 
-    } else {
+            //Mahasiswa::find($Nim)->update($request->all());
 
-        //hapus old image
-        Storage::disk('local')->delete('public/datapegawais/'.$datapegawai->image);
+            $pegawai = DataPegawai::with('jabatan')->where('id', $id)->first();
+            $jabatan = Jabatan::find($request->get('jabatan'));
+            $pegawai->nama = $request->get('nama');
+            if ($pegawai->foto && file_exists(storage_path('app/public/' . $pegawai->foto))) {
+                Storage::delete('public/' . $pegawai->foto);
+            }
+            $image_name = $request->file('foto')->store('images', 'public');
+            $pegawai->foto = $image_name;
+            // $pegawai->jabatan()->associate($id);
+            $pegawai->save();
 
-        //upload new image
-        $image = $request->file('image');
-        $image->storeAs('public/datapegawais', $image->hashName());
-
-        $blog->update([
-            'image'   => $image->hashName(),
-            'NRP'     => $request->NRP,
-            'Pangkat' => $request->pangkat,
-            'Jabatan' => $request->jabatan
-        ]);
-
+            return redirect()->route('table-pegawai.index') ->with('Success', 'Pegawai Berhasil Diupdate');
     }
-
-    if($datapegawai){
-        //redirect dengan pesan sukses
-        return redirect()->route('DataPegawai.index')->with(['success' => 'Data Berhasil Diupdate!']);
-    }else{
-        //redirect dengan pesan error
-        return redirect()->route('DataPegawai.index')->with(['error' => 'Data Gagal Diupdate!']);
-    }
-}
 
 /**
 * destroy
@@ -140,16 +117,26 @@ public function update(Request $request, DataPegawai $datapegawai)
 */
 public function destroy($id)
 {
-  $datapegawai = DataPegawai::findOrFail($id);
-  Storage::disk('local')->delete('public/datapegawais/'.$datapegawai->image);
-  $datapegawai->delete();
+  $pegawai = DataPegawai::findOrFail($id);
+  Storage::disk('local')->delete('app/public/'.$pegawai->foto);
+  $pegawai->delete();
 
-  if($datapegawai){
+  if($pegawai){
      //redirect dengan pesan sukses
-     return redirect()->route('blog.index')->with(['success' => 'Data Berhasil Dihapus!']);
+     return redirect()->route('table-pegawai.index')->with(['success' => 'Data Berhasil Dihapus!']);
   }else{
     //redirect dengan pesan error
-    return redirect()->route('blog.index')->with(['error' => 'Data Gagal Dihapus!']);
+    return redirect()->route('table-pegawai.index')->with(['error' => 'Data Gagal Dihapus!']);
   }
 }
+
+public function show($id)
+    {
+        //$List = Mahasiswa::find($Nim);
+        $pegawai = DataPegawai::with('jabatan')->where('id', $id)->first();
+        return view('pages.show_pegawai', compact('pegawai'), ['pegawai' => $pegawai]);
+    }
+
+
+    
 }

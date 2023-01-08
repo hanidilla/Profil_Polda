@@ -1,6 +1,14 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\SopController;
+use App\Http\Controllers\DataPegawaiController;
+use App\Http\Controllers\FrontendController;
+use App\Http\Controllers\BreakingNewsController;
+use App\Http\Controllers\LogoController;
+use App\Http\Controllers\SliderController;
+use App\Http\Controllers\ProfilController;
+use App\Http\Controllers\VisiMisiController;
 
 /*
 |--------------------------------------------------------------------------
@@ -14,29 +22,26 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::get('/', function () {
-    return view('auth.login');
+    return view('welcome');
 });
 
 Auth::routes();
 
-Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home');
+Route::get('/home', [App\Http\Controllers\HomeController::class, 'index'])->name('home')->middleware('auth');
+
 Auth::routes();
 
 Route::get('/home', 'App\Http\Controllers\HomeController@index')->name('home')->middleware('auth');
 
 Route::group(['middleware' => 'auth'], function () {
-	Route::get('table-pegawai', function () {	
-		return view('pages.table_pegawai');
-	})->name('pegawai');
 
-	Route::get('table-sop', function () {	
-		return view('pages.table_sop');
-	})->name('sop');
-
-	Route::resource('datapegawai', DataPegawaiController::class);
-	// Route::post('datapegawais', 'App\Http\Controllers\DataPegawaiController');
-	// Route::get('datapegawais', ['as' => 'datapegawai.']);
-
+	Route::resource('table-pegawai', DataPegawaiController::class);
+	Route::resource('table-sop', SopController::class);
+	Route::resource('table-news', BreakingNewsController::class);
+	Route::resource('table-logo', LogoController::class);
+	Route::resource('table-slider', SliderController::class);
+	Route::resource('table-profil', ProfilController::class);
+	Route::resource('table-visi', VisiMisiController::class);
 });
 
 Route::group(['middleware' => 'auth'], function () {
@@ -45,6 +50,10 @@ Route::group(['middleware' => 'auth'], function () {
 	Route::put('profile', ['as' => 'profile.update', 'uses' => 'App\Http\Controllers\ProfileController@update']);
 	Route::put('profile/password', ['as' => 'profile.password', 'uses' => 'App\Http\Controllers\ProfileController@password']);
 });
+
+// Route::get('/', [App\Http\Controllers\FrontendController::class, 'index'])->name('home');
+Route::get('/', [App\Http\Controllers\FrontendController::class, 'show']);
+
 
 
 

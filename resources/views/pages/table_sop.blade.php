@@ -1,146 +1,69 @@
-@extends('layouts.app', ['activePage' => 'sop', 'titlePage' => __('Tabel SOP')])
+@extends('layouts.app', ['activePage' => 'Table-Sop', 'titlePage' => __('Tabel SOP')])
 
 @section('content')
-<div class="content">
-  <div class="container-fluid">
-    <div class="row">
-      <div class="col-md-12">
-        <div class="card">
-          <div class="card-header card-header-primary">
-            <a class="btn btn-info float-right" data-toggle="modal" data-target="#exampleModalCenter">Tambah Data</a>
-            <h4 class="card-title ">Simple Table</h4>
-            <p class="card-category"> Here is a subtitle for this table</p>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table">
-                <thead class=" text-primary">
-                  <th>
-                    ID
-                  </th>
-                  <th>
-                    Name
-                  </th>
-                  <th>
-                    Country
-                  </th>
-                  <th>
-                    City
-                  </th>
-                  <th>
-                    Salary
-                  </th>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td>
-                      1
-                    </td>
-                    <td>
-                      Dakota Rice
-                    </td>
-                    <td>
-                      Niger
-                    </td>
-                    <td>
-                      Oud-Turnhout
-                    </td>
-                    <td class="text-primary">
-                      $36,738
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      2
-                    </td>
-                    <td>
-                      Minerva Hooper
-                    </td>
-                    <td>
-                      Curaçao
-                    </td>
-                    <td>
-                      Sinaai-Waas
-                    </td>
-                    <td class="text-primary">
-                      $23,789
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      3
-                    </td>
-                    <td>
-                      Sage Rodriguez
-                    </td>
-                    <td>
-                      Netherlands
-                    </td>
-                    <td>
-                      Baileux
-                    </td>
-                    <td class="text-primary">
-                      $56,142
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      4
-                    </td>
-                    <td>
-                      Philip Chaney
-                    </td>
-                    <td>
-                      Korea, South
-                    </td>
-                    <td>
-                      Overland Park
-                    </td>
-                    <td class="text-primary">
-                      $38,735
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      5
-                    </td>
-                    <td>
-                      Doris Greene
-                    </td>
-                    <td>
-                      Malawi
-                    </td>
-                    <td>
-                      Feldkirchen in Kärnten
-                    </td>
-                    <td class="text-primary">
-                      $63,542
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      6
-                    </td>
-                    <td>
-                      Mason Porter
-                    </td>
-                    <td>
-                      Chile
-                    </td>
-                    <td>
-                      Gloucester
-                    </td>
-                    <td class="text-primary">
-                      $78,615
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+    <div class="content">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col-md-12">
+                    @csrf
+                    <div class="card mb-3">
+                        <div class="card-header card-header-info">
+                            <a class="btn btn-success float-right btn-round" href="{{ route('table-sop.create') }}">Tambah
+                                Data</a>
+                            <h3 class="card-title ">Tabel SOP</h3>
+                            <p class="card-category"> Here is a subtitle for this table</p>
+                        </div>
+                        @if ($message = Session::get('Success'))
+                            <div class="alert alert-success">
+                                <p>{{ $message }}</p>
+                            </div>
+                        @endif
+                        <div class="card-body">
+                            <div class="table-responsive table-bordered">
+                                <table class="card-table table">
+                                    <thead class=" text-primary">
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Nama</th>
+                                            <th scope="col">Prosedur</th>
+                                            <th scope="col">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach ($posts as $list)
+                                            <tr>
+                                                <td>{{ $list->id }}</td>
+                                                <td>{{ $list->nama_sop }}</td>
+                                                <td>{!! nl2br($list->sop) !!}</td>
+                                                <td>
+                                                    <form action="{{ route('table-sop.destroy', $list->id) }}"
+                                                        method="POST">
+                                                        <a type="button" class="btn btn-labeled btn-primary btn-fab"
+                                                            href="{{ route('table-sop.edit', $list->id) }}">
+                                                            <span class="btn-label"><i class="fa fa-pencil"></i></span> </a>
+                                                        <!-- <a type="button" class="btn btn-labeled btn-success btn-fab">
+                              <span class="btn-label"><i class="fa fa-bars"></i></span> </a> -->
+                                                        @csrf
+                                                        @method('DELETE')
+                                                        <button type="submit" class="btn btn-labeled btn-danger btn-fab">
+                                                            <span class="btn-label"><i class="fa fa-trash"></i></span>
+                                                        </button>
+                                                    </form>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="pagination flex-row-reverse">
+                                {{ $posts->links() }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
         </div>
-      </div>
     </div>
-  </div>
-</div>
 @endsection
